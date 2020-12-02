@@ -3,33 +3,29 @@
 <head>
     <meta charset="utf-8"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="classes.js"></script>
     <link rel="stylesheet" href="main.css">
+    <script src="traces.js"></script>
+    <script src="timings.js"></script>
+    <script src="graphs.js"></script>
+    <script src="util.js"></script>
+    <script src="csvFormats.js"></script>
+    <script src="annotations.js"></script>
 </head>
 <body>
-    <div id="left"></div>
-    <div id="right">
-        <label for="stepInput">Step (s/pt):</label>
-        <input id="stepInput" type="number" step="any" value="1e-6">
-        <label for="stackSelect">Stack:</label>
-        <input id="stackSelect" type="checkbox">
+    <div id="left">
         <br>
-        <button type="button" id="showOptions">Show traces</button>
-        <div id="traceOptions" class="options">
-            <div id="scopeDiv"></div>
-            <button id="addScopeBtn">Add ScopeShot</button>
-        </div>
-        <br>
-        <button type="button" id="showTimings">Show timings</button>
-        <div id="timingOptions" class="options">
-            <div id="timingDiv"></div>
-            <button id="addTimingBtn">Add Timing</button>
-        </div>
-
+        <graph-container id="graphs"></graph-container>
     </div>
-    <script src="main.js"></script>
+    <div id="right">
+        <br>
+        <trace-container id="traces"></trace-container>
+        <br>
+        <timing-container id="timings"></timing-container>
+        <br>
+        <annotation-container id="annotations"></annotation-container>
+    </div>
+    <script src="index.js"></script>
 </body>
 </html>
 

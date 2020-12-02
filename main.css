@@ -1,55 +1,13 @@
-div.scope {
-    border-style: solid;
-}
-div.trace {
-    border-style: double;
-}
 #right {
-    flex: 1 1 30%;
+    flex: 0 1 600px;
 }
 #left {
-    display: flex;
-    flex-direction: column;
-    flex: 0 0 60%;
+    flex: 1 1 60%;
     position: relative;
-    padding-top: 20px;
 }
-
 body {
     display: flex;
     min-height: 100vh;
     flex-direction: row;
     margin: 0;
-}
-.upBtn {    
-    display: none;
-    position: absolute;
-    right: 2px;
-    top: 0px;
-    z-index: 10;
-}
-.downBtn {    
-    display: none;
-    position: absolute;
-    right: 2px;
-    bottom: 10px;
-    z-index: 10;
-}
-
-.parentDisplay {
-    flex: 0 1 600px;
-    display: flex;
-    flex-direction: row;
-}
-.parentNames {
-    flex: 0 1 150px;
-    text-align: right;
-}
-.parentGraph {
-    flex: 1 1;
-}
-
-.options {
-    border-style: groove;
-    display: block;
 }
