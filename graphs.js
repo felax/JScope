@@ -187,8 +187,9 @@ class Graph extends HTMLElement {
         let annotations = this.graph.annotations();
         let annotation = {
             series: point.name,
-            x: String(point.xval),
+            x: point.xval,
             shortText: String(i),
+            text: point.yval,
             realX: point.xval
         }
         annotations.push(annotation);
