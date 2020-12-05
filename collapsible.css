@@ -1,3 +1,6 @@
+:host > div{
+    padding: 4px 0;
+}
 .collapsible {
     background-color: #777;
     color: white;

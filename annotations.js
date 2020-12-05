@@ -1,24 +1,10 @@
-class AnnotationContainer extends HTMLElement {
+class AnnotationContainer extends Collapsible {
     table = document.createElement("table");
 
     constructor() {
         super();
-        const shadow = this.attachShadow({mode: 'open'});
-        shadow.innerHTML = `
-            <link rel="stylesheet" href="collapsible.css">
-            <link rel="stylesheet" href="table.css">
-        `;
-        const wrapper = document.createElement('div');
-        
-        const collapseBtn = document.createElement("button");
-        collapseBtn.innerHTML = "Timings";
-        collapseBtn.className = "collapsible";
-        collapseBtn.addEventListener("click", collapse);
-        wrapper.appendChild(collapseBtn);
+        this.collapseBtn.innerHTML = "Annotations";
 
-        const content = document.createElement("div");
-        content.className = "content";
-        
         const header = this.table.createTHead();
         const row = header.insertRow();
         const num = row.insertCell();
@@ -29,18 +15,13 @@ class AnnotationContainer extends HTMLElement {
         series.innerHTML = "Series";
         time.innerHTML = "Time";
         val.innerHTML = "Voltage";
-        content.appendChild(this.table);
-        
-        wrapper.appendChild(content);
-        shadow.appendChild(wrapper);
+        this.contentDiv.appendChild(this.table);
     }
 
-    update() {
-        console.log("POGGERS")
+    update(annotations) {
         while (this.table.rows.length > 1) {
             this.table.deleteRow(-1);
         }
-        const annotations = graphCtr.getAnnotations();
         for (let ann of annotations) {
             const row = this.table.insertRow();
             const num = row.insertCell();
@@ -50,7 +31,7 @@ class AnnotationContainer extends HTMLElement {
             num.innerHTML = ann.shortText;
             series.innerHTML = ann.series;
             time.innerHTML = formatTime(Number(ann.x));
-            val.innerHTML = "N/A";
+            val.innerHTML = ann.text;
         }
     }
 }

@@ -1,30 +1,15 @@
-class TimingContainer extends HTMLElement {
+class TimingContainer extends Collapsible {
     timingDiv = document.createElement("div");
 
     constructor() {
         super();
-        const shadow = this.attachShadow({mode: 'open'});
-        shadow.innerHTML = COLLAPSE_CSS;
-        const wrapper = document.createElement('div');
-        
-        const collapseBtn = document.createElement("button");
-        collapseBtn.innerHTML = "Timings";
-        collapseBtn.className = "collapsible";
-        collapseBtn.addEventListener("click", collapse);
-        wrapper.appendChild(collapseBtn);
-
-        const content = document.createElement("div");
-        content.className = "content";
-        
-        content.appendChild(this.timingDiv);
+        this.collapseBtn.innerHTML = "Timings";
+        this.contentDiv.appendChild(this.timingDiv);
 
         const addTimingBtn = document.createElement("button");
         addTimingBtn.innerHTML = "\u2795";
         addTimingBtn.addEventListener("click", this.addTiming.bind(this));
-        content.appendChild(addTimingBtn);
-        
-        wrapper.appendChild(content);
-        shadow.appendChild(wrapper);
+        this.contentDiv.appendChild(addTimingBtn);
     }
 
     addTiming() {
@@ -32,9 +17,9 @@ class TimingContainer extends HTMLElement {
         this.timingDiv.appendChild(timing);
     }
 
-    updateSelects() {
+    updateSelects(annotations) {
         for (let timing of this.timingDiv.children) {
-            timing.updateSelect(graphCtr.getAnnotations());
+            timing.updateSelect(annotations);
         }
     }
 }
@@ -67,7 +52,7 @@ class Timing extends HTMLElement {
         rmvBtn.addEventListener("click", this.remove.bind(this), false);
         wrapper.appendChild(rmvBtn);
 
-        this.updateSelect(graphCtr.getAnnotations());
+        this.updateSelect(traceCtr.annotations);
 
         shadow.appendChild(wrapper);
     }
@@ -105,13 +90,13 @@ class Timing extends HTMLElement {
         }
         let x1;
         let x2;
-        const annotations = graphCtr.getAnnotations();
+        const annotations = traceCtr.annotations;
         for (let anno of annotations) {
             if (anno.shortText == this.firstSelect.value) { x1 = anno.x; }
             if (anno.shortText == this.secondSelect.value) { x2 = anno.x;}
         }
         const diff = x2 - x1;
-        const perErr = Math.round((graphCtr.step / diff) * 100);
+        const perErr = Math.round((options.step / diff) * 100);
         this.result.value = formatTime(diff) + " (\u00B1 " + perErr + "%)";
     }
 

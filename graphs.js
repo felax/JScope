@@ -1,148 +1,152 @@
-class GraphContainer extends HTMLElement {
-    graphDiv = document.createElement("div");
-    step = 1e-6;
-    stack = false;
+class MainGraphContainer extends HTMLElement {
+    wrapper = document.createElement("div");
+    graph = document.createElement("main-graph");
 
     constructor() {
         super();
         const shadow = this.attachShadow({mode: 'open'});
-        const wrapper = document.createElement("div");
-
-        const optionDiv = document.createElement("div");
-        optionDiv.style.display = "flex";
-        optionDiv.style.justifyContent = "center";
-        optionDiv.style.gap = "10px";
-        wrapper.appendChild(optionDiv);
-
-        const stepInput = document.createElement("input");
-        stepInput.type = "number";
-        stepInput.value = this.step;
-        stepInput.step = "any";
-        stepInput.addEventListener("change", this.updateStep.bind(this));
-        const stepLabel = document.createElement("span");
-        stepLabel.innerHTML = "Step (s/pt): ";
-        optionDiv.appendChild(stepLabel);
-        optionDiv.appendChild(stepInput);
-
-        const stackInput = document.createElement("input");
-        stackInput.type = "checkbox";
-        stepInput.checked = "false";
-        stackInput.addEventListener("change", this.updateStack.bind(this));
-        const stackLabel = document.createElement("span");
-        stackLabel.innerHTML = "Stack: ";
-        optionDiv.appendChild(stackLabel);
-        optionDiv.appendChild(stackInput);
-
-        this.graphDiv.style.display = "flex";
-        this.graphDiv.style.flexDirection = "column";
-        wrapper.appendChild(this.graphDiv);
-
-        shadow.appendChild(wrapper);
+        this.wrapper.style.paddingTop = "20px";
+        this.wrapper.appendChild(this.graph);
+        this.graph.dygraph.updateOptions({
+            file: [
+                [0,1],
+                [1,2],
+                [10,3],
+                [11,4],
+            ],
+            labels: ["x", "y"]
+        });
+        shadow.appendChild(this.wrapper);
     }
 
-    updateStep(event) {
-        this.step = Number(event.target.value);
-        const annotations = this.getAnnotations();
-        const bounds = traceCtr.getStartEnd();
-        let time = arange(bounds.start, bounds.end, this.step)
-        if (this.stack) {
-            const traces = traceCtr.getTraces();
-            for (let trace of traces) {
-                trace.graphElem.draw([trace]);
-            }
-        }
-        else {
-            mainGraph.draw(traceCtr.getTraces());
-        }
-        for (let ann of annotations) {
-            ann.x = String(findClosestSorted(ann.realX, time));
-        }
-        this.setAnnotations(annotations);
-        timingCtr.updateSelects();
+    draw() {
+        this.graph.dygraph.setAnnotations(traceCtr.annotations, true);
+        this.graph.draw(traceCtr.traces, traceCtr.start, traceCtr.stop, options.step);
     }
 
-    updateStack(event) {
-        this.stack = event.target.checked;
-        const annotations = this.getAnnotations(!this.stack);
-        const traces = traceCtr.getTraces();
-        if (event.target.checked) {
-            mainGraph.clear();
-            mainGraph.remove();
-            for (let trace of traces) {
-                this.graphDiv.appendChild(trace.graphElem);
-                trace.graphElem.graph.resize();
-                trace.graphElem.draw([trace]);
-                if (!trace.visibility) {
-                    trace.graphElem.style.display = "none";
-                }
-            }
-        }
-        else {
-            for (let trace of traces) {
-                trace.graphElem.clear();
-                trace.graphElem.remove();
-            }
-            this.graphDiv.appendChild(mainGraph);
-            mainGraph.graph.resize();
-            mainGraph.draw(traceCtr.getTraces());
-        }
-        this.setAnnotations(annotations);
+    hide() {
+        this.wrapper.style.display = "none";
     }
 
-    getAnnotations(stack = this.stack) {
-        let annotations = [];
-        if (stack) {
-            for (let graphElem of this.graphDiv.children) {
-                for (let ann of graphElem.graph.annotations()) {
-                    annotations.push(ann);
-                }
-            }
-        }
-        else {
-            annotations = mainGraph.graph.annotations();
-        }
-        console.log(annotations)
-        return annotations;
+    show() {
+        this.wrapper.style.display = "block";
+        this.draw();
+        this.graph.dygraph.resize();
     }
     
-    setAnnotations(annotations) {
-        if (this.stack) {
-            for (let graphElem of this.graphDiv.children) {
-                const traceName = graphElem.graph.getLabels()[1];
-                const traceAnn = [];
-                for (let ann of annotations) {
-                    if (ann.series == traceName) {
-                        traceAnn.push(ann);
-                    }
-                }
-                graphElem.graph.setAnnotations(traceAnn);
+    setVisibility() {
+        this.draw();
+    }
+}
+
+class StackGraphContainer extends HTMLElement {
+    wrapper = document.createElement("div");
+
+    constructor() {
+        super();
+        const shadow = this.attachShadow({mode: 'open'});
+        this.wrapper.style.display = "none";
+        this.wrapper.style.flexDirection = "column"
+        this.wrapper.style.paddingTop = "20px";
+        shadow.appendChild(this.wrapper);
+    }
+
+    draw(traces) {
+        const annotations = traceCtr.annotations;
+        if (!Array.isArray(traces)) { traces = [traces]; }
+        for (let trace of traces) {
+            const graph = this.getGraph(trace.name);
+            if (graph) {
+                graph.dygraph.setAnnotations(annotations, true);
+                graph.draw(trace, traceCtr.start, traceCtr.stop, options.step);
             }
         }
-        else {
-            mainGraph.graph.setAnnotations(annotations);
+    }
+
+    getGraph(name) {
+        for (let graph of this.graphs) {
+            if (graph.name == name) {
+                return graph;
+            }
         }
-        annoCtr.update();
+        return null;
+    }
+
+    setVisibility(name, show) {
+        const graph = this.getGraph(name);
+        if (show) {
+            graph.style.display = "block";
+            graph.draw(traceCtr.getTrace(name), traceCtr.start, traceCtr.stop, options.step);
+            graph.dygraph.resize();
+        }
+        else {
+            graph.style.display = "none";
+        }
+    }
+
+    deleteGraph(name) {
+        const graph = this.getGraph(name);
+        graph.dygraph.destroy();
+        graph.remove();
+    }
+
+    addGraph(name) {
+        const graph = document.createElement("stack-graph");
+        graph.dygraph.updateOptions({
+            labels: ["time", name],
+        })
+        this.wrapper.appendChild(graph);
+        return graph;
+    }
+
+    hide() {
+        this.wrapper.style.display = "none";
+    }
+
+    show() {
+        this.wrapper.style.display = "flex";
+        const traces = traceCtr.traces;
+        this.draw(traces);
+        for (let graph of this.graphs) {
+            graph.dygraph.resize();
+        }
+        for (let trace of traces) {
+            this.setVisibility(trace.name, trace.visibility);
+        }
+    }
+
+    get graphs() {
+        return this.wrapper.children;
+    }
+
+    get maxFlexOrder() {
+        let max = 0;
+        for (let graph of this.graphs) {
+            const order = Number(graph.style.order);
+            if (order > max) {
+                max = order;
+            }
+        }
+        return max;
     }
 }
 
 class Graph extends HTMLElement {
-    graph;
-    wrapper = document.createElement("div");
-    upBtn = document.createElement("button");
-    downBtn = document.createElement("button");
+    dygraph;
     graphDiv;
     constructor() {
         super();
         const shadow = this.attachShadow({mode: 'open'});
 
-        shadow.innerHTML = DYGRAPH_CSS;
+        shadow.innerHTML = `<link rel="stylesheet" href="dygraph.css">`;
 
-        this.wrapper.style.position = "relative";
-        this.wrapper.style.display = "flex";
-        this.wrapper.style.flexDirection = "row";
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "relative";
+        wrapper.style.display = "flex";
+        wrapper.style.flexDirection = "row";
 
         const labelsDiv = document.createElement("div");
-        labelsDiv.style.flex = "0 0 150px";
+        labelsDiv.style.flex = "0 0 200px";
         labelsDiv.style.textAlign = "right";
         this.wrapper.appendChild(labelsDiv);
 
@@ -151,10 +155,10 @@ class Graph extends HTMLElement {
         this.graphDiv.style.position = "relative";
         this.graphDiv.style.height = "400px"
         this.graphDiv.style.width = "2px"
-        this.wrapper.appendChild(this.graphDiv);
+        wrapper.appendChild(this.graphDiv);
 
-        shadow.appendChild(this.wrapper);
-        this.graph = new Dygraph(this.graphDiv, [[0,0], [1,1]], 
+        shadow.appendChild(wrapper);
+        this.dygraph = new Dygraph(this.graphDiv, [[0,0], [1,1]], 
             {
                 legend: 'always',
                 connectSeparatedPoints: 'true',
@@ -165,12 +169,11 @@ class Graph extends HTMLElement {
                             return num.toExponential(3);
                         },
                     },
-                    y: {}
                 },
                 labels: ["time", "none"],
-                yRangePad: 6,
                 strokeWidth: 2,
                 labelsDiv: labelsDiv,
+                yRangePad: 6,
                 annotationClickHandler: this.onAnnotationClick.bind(this),
                 pointClickCallback: this.onPointClick.bind(this),
             }
@@ -178,81 +181,46 @@ class Graph extends HTMLElement {
     }
 
     onPointClick(event, point) {
-        const numbers = [];
-        for (let ann of graphCtr.getAnnotations()) {
-            numbers.push(Number(ann.shortText));
-        }
-        let i = 0;
-        while (numbers.includes(i)) { i++; }
-        let annotations = this.graph.annotations();
-        let annotation = {
-            series: point.name,
-            x: point.xval,
-            shortText: String(i),
-            text: point.yval,
-            realX: point.xval
-        }
-        annotations.push(annotation);
-        this.graph.setAnnotations(annotations);
-        timingCtr.updateSelects();
-        annoCtr.update();
+        const annotations = traceCtr.addAnnotation(point);
+        this.dygraph.setAnnotations(annotations);
     }
 
     onAnnotationClick(annotation, point, dygraph, event) {
         if (!event.ctrlKey) {
             return;
         }
-        let annotations = this.graph.annotations();
-        for (let i = 0; i < annotations.length; i++) {
-            if (annotations[i].shortText == annotation.shortText) {
-                annotations.splice(i, 1);
-                break;
-            }
-        }
-        this.graph.setAnnotations(annotations);
-        timingCtr.updateSelects();
-        annoCtr.update();
+        const annotations = traceCtr.removeAnnotation(annotation);
+        this.dygraph.setAnnotations(annotations);
     }
 
-    draw(traces) {
-        const bounds = traceCtr.getStartEnd();
+    draw(traces, start, stop, step) {
         const dataArrays = [];
-        const time = arange(bounds.start, bounds.end, graphCtr.step);
+        const time = arange(start, stop, step);
         dataArrays.push(time);
         const colors = [];
         const visibility = [];
         const labels = ["Time"];
+        if (!Array.isArray(traces)) { traces = [traces]; }
         for (let trace of traces) {
-            const scaled = scale(trace, bounds.start, bounds.end, graphCtr.step)
-            dataArrays.push(scaled);
+            dataArrays.push(scale(trace, start, stop, step));
             colors.push(trace.color);
             visibility.push(trace.visibility);
             labels.push(trace.name);
         }
         const data = merge(dataArrays);
-        this.graph.updateOptions({
+        this.dygraph.updateOptions({
             file: data,
             labels: labels,
             colors: colors,
             visibility: visibility
         });
     }
-
-    clear() {
-        this.graph.updateOptions({
-            file: [],
-            labels: [],
-            colors: [],
-            visibility: []
-        });
-        this.graph.setAnnotations([]);
-    }
 }
 
 class MainGraph extends Graph {
     constructor() {
         super();
-        this.graph.updateOptions({
+        this.dygraph.updateOptions({
             xlabel: "Time (s)",
             ylabel: "Voltage (V)"
         });
@@ -260,11 +228,14 @@ class MainGraph extends Graph {
 }
 
 class StackGraph extends Graph {
+    upBtn = document.createElement("button");
+    downBtn = document.createElement("button");
     constructor() {
         super();
-        this.wrapper.addEventListener("mouseover", this.showBtns.bind(this));
-        this.wrapper.addEventListener("mouseout", this.showBtns.bind(this));
-        this.graph.updateOptions({
+        const wrapper = this.shadowRoot.querySelector("div");
+        wrapper.addEventListener("mouseover", this.showBtns.bind(this));
+        wrapper.addEventListener("mouseout", this.showBtns.bind(this));
+        this.dygraph.updateOptions({
             axes: {
                 x: { drawAxis: false },
                 y: { drawAxis: false }
@@ -276,7 +247,7 @@ class StackGraph extends Graph {
         btnDiv.style.flex = "0 0 25px";
         btnDiv.style.display = "flex";
         btnDiv.style.flexDirection = "column"
-        this.wrapper.appendChild(btnDiv);
+        wrapper.appendChild(btnDiv);
         
         this.upBtn.innerHTML = "↑";
         this.upBtn.style.flex = "1 1";
@@ -307,8 +278,7 @@ class StackGraph extends Graph {
         let below = this;
         let aboveDiff = -1000;
         let belowDiff = 1000;
-        const graphs = graphCtr.graphDiv.children;
-        for (let graph of graphs) {
+        for (let graph of this.graphs) {
             const diff = graph.style.order - this.style.order;
             if (diff > 0 && diff < belowDiff) {
                 belowDiff = diff;
@@ -329,5 +299,9 @@ class StackGraph extends Graph {
             this.style.order = below.style.order;
             below.style.order = old;
         }
+    }
+
+    get name() {
+        return this.dygraph.getLabels()[1];
     }
 }

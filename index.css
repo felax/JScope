@@ -1,5 +1,7 @@
 #right {
-    flex: 0 1 600px;
+    flex: 0 1 500px;
+    display: "flex";
+    flex-direction: "column";
 }
 #left {
     flex: 1 1 60%;

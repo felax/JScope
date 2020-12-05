@@ -1,30 +1,37 @@
-class TraceContainer extends HTMLElement {
+class TraceContainer extends Collapsible {
     scopeDiv = document.createElement("div");
 
     constructor() {
         super();
-        const shadow = this.attachShadow({mode: 'open'});
-        shadow.innerHTML = COLLAPSE_CSS;
-        const wrapper = document.createElement('div');
-
-        const collapseBtn = document.createElement("button");
-        collapseBtn.innerHTML = "Traces";
-        collapseBtn.className = "collapsible";
-        collapseBtn.addEventListener("click", collapse);
-        wrapper.appendChild(collapseBtn);
-
-        const content = document.createElement("div");
-        content.className = "content";
-        
-        content.appendChild(this.scopeDiv);
+        this.collapseBtn.innerHTML = "Traces";
+        this.contentDiv.appendChild(this.scopeDiv);
 
         const addScopeBtn = document.createElement("button");
         addScopeBtn.innerHTML = "\u2795";
         addScopeBtn.addEventListener("click", this.addScope.bind(this));
-        content.appendChild(addScopeBtn);
+        this.contentDiv.appendChild(addScopeBtn);
+    }
 
-        wrapper.appendChild(content);
-        shadow.appendChild(wrapper);
+    addAnnotation(point) {
+        console.log(point)
+        const trace = this.getTrace(point.name);
+        const num = this.getUniqueAnnotationNum();
+        trace.addAnnotation(num, point);
+        const annotations = this.annotations;
+        timingCtr.updateSelects(annotations);
+        annotationCtr.update(annotations);
+        return annotations;
+    }
+
+    removeAnnotation(annotation) {
+        console.log("thereitisdude")
+        console.log(annotation)
+        const trace = this.getTrace(annotation.series);
+        trace.removeAnnotation(annotation);
+        const annotations = this.annotations;
+        timingCtr.updateSelects(annotations);
+        annotationCtr.update(annotations);
+        return annotations;
     }
 
     addScope() {
@@ -32,7 +39,7 @@ class TraceContainer extends HTMLElement {
         this.scopeDiv.appendChild(scope);
     }
 
-    getTraces() {
+    get traces() {
         const traces = [];
         for (let scope of this.scopeDiv.children) {
             for (let trace of scope.traceDiv.children) {
@@ -43,7 +50,7 @@ class TraceContainer extends HTMLElement {
     }
 
     getTrace(name) {
-        const traces = this.getTraces();
+        const traces = this.traces;
         for (let trace of traces) {
             if (trace.name == name) {
                 return trace;
@@ -52,8 +59,8 @@ class TraceContainer extends HTMLElement {
         return null;
     }
 
-    getNames() {
-        const traces = this.getTraces();
+    get names() {
+        const traces = this.traces;
         let names = [];
         for (let trace of traces) {
             names.push(trace.name);
@@ -62,7 +69,7 @@ class TraceContainer extends HTMLElement {
     }
 
     getUniqueName(name) {
-        const names = this.getNames();
+        const names = this.names;
         let newName = name;
         let inc = 2;
         let unique = false;
@@ -73,30 +80,53 @@ class TraceContainer extends HTMLElement {
         return newName;
     }
 
-    getStartEnd() {
-        const traces = this.getTraces();
-        let maxTime = 0;
-        let minTime = 1000;
+    get annotations() {
+        const annotations = [];
+        const traces = this.traces;
+        const timeArr = arange(this.start, this.stop, options.step);
         for (let trace of traces) {
-            const endTime = trace.data.length * trace.step + trace.offset;
-            const startTime = trace.offset;
-            if (endTime > maxTime) { maxTime = endTime; }
-            if (startTime < minTime) { minTime = startTime; }
-        }
-        //console.log(maxTime)
-        return {start: minTime, end: maxTime};
-    }
-
-    getLowestOrder() {
-        let max = 0;
-        const traces = this.getTraces();
-        for (let trace of traces) {
-            const order = Number(trace.graphElem.style.order);
-            if (order > max) {
-                max = order;
+            for (let data of trace.annotations) {
+                const annotation = {
+                    series: trace.name,
+                    x: findClosestSorted(data.x + trace.offset, timeArr),
+                    shortText: data.num,
+                    text: data.y,
+                }
+                annotations.push(annotation);
             }
         }
-        return max;
+        return annotations;
+    }
+
+    getUniqueAnnotationNum() {
+        const annotations = this.annotations;
+        const numbers = [];
+        for (let ann of annotations) {
+            numbers.push(Number(ann.shortText));
+        }
+        let i = 0;
+        while (numbers.includes(i)) { i++; }
+        return i;
+    }
+
+    get start() {
+        const traces = this.traces;
+        let start = 1000;
+        for (let trace of traces) {
+            const min = trace.offset;
+            if (min < start) { start = min; }
+        }
+        return start;
+    }
+
+    get stop() {
+        const traces = this.traces;
+        let stop = 0;
+        for (let trace of traces) {
+            const max = trace.data.length * trace.step + trace.offset;
+            if (max > stop) { stop = max; }
+        }
+        return stop;
     }
 }
 
@@ -110,6 +140,7 @@ class Scope extends HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.style.borderStyle = "solid";
         wrapper.style.borderWidth = "thin";
+        wrapper.style.padding = "4px 0"
 
         const uploadFileBtn = document.createElement("input");
         uploadFileBtn.type = "file";
@@ -138,26 +169,22 @@ class Scope extends HTMLElement {
         while (this.traceDiv.children.length > 0) {
             const trace = this.traceDiv.children.item(0);
             trace.data = null;
-            trace.graphElem.graph.destroy();
-            trace.graphElem.remove();
+            stackGraphCtr.deleteGraph(trace.name);
             trace.remove();
         }
         this.remove();
-        if (!graphCtr.stack) {
-            mainGraph.draw(traceCtr.getTraces());
+        if (!options.stack) {
+            mainGraphCtr.draw(traceCtr.traces, options.step);
         }
     }
 
     addTrace(trace) {
-        trace.graphElem.style.order = String(traceCtr.getLowestOrder() + 1);
         trace.name = traces.getUniqueName(trace.name);
         trace.nameInput.value = trace.name;
         trace.offset = this.offset;
         this.traceDiv.appendChild(trace);
-        if (graphCtr.stack) {
-            graphCtr.graphDiv.appendChild(trace.graphElem);
-            trace.graphElem.graph.resize();
-        }
+        const graph = stackGraphCtr.addGraph(trace.name);
+        graph.style.order = String(traceCtr.maxFlexOrder + 1);
     }
 
     updateOffsets(event) {
@@ -166,14 +193,7 @@ class Scope extends HTMLElement {
         for (let trace of traces) {
             trace.offset = this.offset;
         }
-        for (let trace of traces) {
-            if (graphCtr.stack) {
-                trace.graphElem.draw([trace]);
-            }
-        }
-        if (!graphCtr.stack) {
-            mainGraph.draw(traceCtr.getTraces());
-        };
+        activeGraphCtr.draw(traceCtr.traces, options.step);
     }
 
     loadCSV(event) {
@@ -190,13 +210,8 @@ class Scope extends HTMLElement {
             }
             for (let trace of traces) {
                 this.addTrace(trace);
-                if (graphCtr.stack) {
-                    trace.graphElem.draw([trace]);
-                }
             }
-            if (!graphCtr.stack) {
-                mainGraph.draw(traceCtr.getTraces());
-            }
+            activeGraphCtr.draw(traceCtr.traces);
         });
         reader.readAsText(file);
     }
@@ -209,8 +224,8 @@ class Trace extends HTMLElement {
     visibility = true;
     color = getRandomColor(0, 155);
     nameInput = document.createElement("input");
-    graphElem = document.createElement("stack-graph");
     info = document.createElement("span");
+    annotations = [];
 
     constructor() {
         super();
@@ -244,48 +259,51 @@ class Trace extends HTMLElement {
 
     delete() {
         this.data = null;
-        this.graphElem.graph.destroy();
-        this.graphElem.remove();
+        const graph = stackGraphCtr.getGraph(this.name);
+        graph.dygraph.destroy();
+        graph.remove();
         this.remove();
-        if (!graphCtr.stack.checked) {
-            mainGraph.draw(traceCtr.getTraces());
+        if (!options.stack) {
+            mainGraphCtr.draw(traceCtr.traces, options.step);
+        }
+    }
+
+    addAnnotation(number, point) {
+        const data = {
+            x: point.xval - this.offset,
+            y: point.yval,
+            num: number
+        }
+        this.annotations.push(data);
+    }
+
+    removeAnnotation(annotation) {
+        for (let i = 0; i < this.annotations.length; i++) {
+            if (this.annotations[i].num == annotation.shortText) {
+                this.annotations.splice(i, 1);
+            }
         }
     }
 
     changeName(event) {
         this.name = traceCtr.getUniqueName(event.target.value);
-        this.nameInput.value = this.name;
-        if (graphCtr.stack.checked) {
-            this.graphElem.draw([this])
-        }
-        else {
-            mainGraph.draw(traceCtr.getTraces());
-        }
+        activeGraphCtr.draw(this);
     }
 
     setColor(event) {
         this.color = event.target.value;
-        if (graphCtr.stack.checked) {
-            this.graphElem.draw([this])
-        }
-        else {
-            mainGraph.draw(traceCtr.getTraces());
-        }
+        activeGraphCtr.draw(this);
     }
 
     setVisibility(event) {
         this.visibility = event.target.checked;
-        if (graphCtr.stack) {
-            if (this.visibility) {
-                this.graphElem.style.display = "block";
-                this.graphElem.draw([this]);
-            }
-            else {
-                this.graphElem.style.display = "none";
-            }
+        if (this.visibility) {
+            console.log(true);
+            activeGraphCtr.setVisibility(this.name, true);
         }
         else {
-            mainGraph.draw(traceCtr.getTraces());
+            console.log(false)
+            activeGraphCtr.setVisibility(this.name, false);
         }
     }
 }
