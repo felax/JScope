@@ -1,3 +1,12 @@
+:host > div {
+    padding: 4px 0;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+}
+
 .collapsible {
     background-color: #777;
     color: white;
@@ -15,7 +24,7 @@
 }
 
 .content {
-    padding: 0 18px;
+    padding: 4px 18px;
     display: none;
     overflow: hidden;
     background-color: #f1f1f1;
@@ -31,3 +40,17 @@
 .active:after {
     content: "\2796"; /* Unicode character for "minus" sign (-) */
 }
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    text-align: center;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th {
+    background-color: #ccc;
+  }

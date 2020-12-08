@@ -1,48 +1,35 @@
-class AnnotationContainer extends HTMLElement {
+class AnnotationContainer extends Collapsible {
     table = document.createElement("table");
 
     constructor() {
         super();
-        const shadow = this.attachShadow({mode: 'open'});
-        shadow.innerHTML = `
-            <link rel="stylesheet" href="collapsible.css">
-            <link rel="stylesheet" href="table.css">
-        `;
-        const wrapper = document.createElement('div');
-        
-        const collapseBtn = document.createElement("button");
-        collapseBtn.innerHTML = "Timings";
-        collapseBtn.className = "collapsible";
-        collapseBtn.addEventListener("click", collapse);
-        wrapper.appendChild(collapseBtn);
+        this.collapseBtn.innerHTML = "Annotations";
 
-        const content = document.createElement("div");
-        content.className = "content";
-        
         const header = this.table.createTHead();
         const row = header.insertRow();
-        const num = row.insertCell();
-        const series = row.insertCell();
-        const time = row.insertCell();
-        const val = row.insertCell();
+        const num = document.createElement("th");
+        row.appendChild(num);
+        const series = document.createElement("th");
+        row.appendChild(series);
+        const time = document.createElement("th");
+        row.appendChild(time);
+        const val = document.createElement("th");
+        row.appendChild(val);
         num.innerHTML = "#";
         series.innerHTML = "Series";
         time.innerHTML = "Time";
         val.innerHTML = "Voltage";
-        content.appendChild(this.table);
-        
-        wrapper.appendChild(content);
-        shadow.appendChild(wrapper);
+        this.table.createTBody();
+
+        this.contentDiv.appendChild(this.table);
     }
 
-    update() {
-        console.log("POGGERS")
-        while (this.table.rows.length > 1) {
-            this.table.deleteRow(-1);
-        }
-        const annotations = graphCtr.getAnnotations();
+    update(annotations) {
+        this.table.removeChild(this.table.getElementsByTagName("tbody")[0]);
+        const body = this.table.createTBody();
+        
         for (let ann of annotations) {
-            const row = this.table.insertRow();
+            const row = body.insertRow();
             const num = row.insertCell();
             const series = row.insertCell();
             const time = row.insertCell();
@@ -50,7 +37,7 @@ class AnnotationContainer extends HTMLElement {
             num.innerHTML = ann.shortText;
             series.innerHTML = ann.series;
             time.innerHTML = formatTime(Number(ann.x));
-            val.innerHTML = "N/A";
+            val.innerHTML = Number(ann.text).toFixed(3);
         }
     }
 }
