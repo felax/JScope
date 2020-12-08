@@ -13,7 +13,6 @@ class TraceContainer extends Collapsible {
     }
 
     addAnnotation(point) {
-        console.log(point)
         const trace = this.getTrace(point.name);
         const num = this.getUniqueAnnotationNum();
         trace.addAnnotation(num, point);
@@ -24,8 +23,6 @@ class TraceContainer extends Collapsible {
     }
 
     removeAnnotation(annotation) {
-        console.log("thereitisdude")
-        console.log(annotation)
         const trace = this.getTrace(annotation.series);
         trace.removeAnnotation(annotation);
         const annotations = this.annotations;
