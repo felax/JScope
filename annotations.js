@@ -24,10 +24,12 @@ class AnnotationContainer extends Collapsible {
         this.contentDiv.appendChild(this.table);
     }
 
+    // Delete current table body and re-create it with given values
     update(annotations) {
+        annotations.sort((a, b) => (a.shortText > b.shortText) ? 1 : -1);
         this.table.removeChild(this.table.getElementsByTagName("tbody")[0]);
         const body = this.table.createTBody();
-        
+
         for (let ann of annotations) {
             const row = body.insertRow();
             const num = row.insertCell();

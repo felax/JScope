@@ -1,3 +1,11 @@
+/* 
+    Create function to parse CSV arrays here. The first "if" line needs to 
+    refer to a unique attribute of the format. If two different formats are
+    checked for the same thing, problems might arise. See below for function
+    structure. 
+    Make sure to then add the function in trace.js->scope->loadCSV().
+*/
+
 function parseOldTek(csv, traces) {
     if (csv[0][0] != "Record Length") {
         return;

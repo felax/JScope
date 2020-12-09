@@ -12,11 +12,12 @@ class Collapsible extends HTMLElement {
         wrapper.appendChild(this.collapseBtn);
 
         this.contentDiv.className = "content";
-        
         wrapper.appendChild(this.contentDiv);
+
         shadow.appendChild(wrapper);
     }
 
+    // Show/hide content
     collapse(event) {
         const content = event.target.nextElementSibling;
         event.target.classList.toggle("active");

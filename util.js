@@ -1,3 +1,4 @@
+// Generate random Hex color codes with given min/max rgb values
 function getRandomColor(min, max) {
     let r = Math.floor(Math.random() * (max - min) + min);
     let g = Math.floor(Math.random() * (max - min) + min);
@@ -6,6 +7,8 @@ function getRandomColor(min, max) {
     return color;
 }
 
+// Merge an array containing multiple arrays.
+// For exemple, the first index of each array will be combined into another
 function merge(arrays) {
     let result = [];
     for (let i = 0; i < arrays[0].length; i++) {
@@ -17,6 +20,7 @@ function merge(arrays) {
     return result;
 }
 
+// Create an array with evenly spaced values within a given interval
 function arange(start, stop, step) {
     let result = [];
     while (start < stop) {
@@ -26,6 +30,7 @@ function arange(start, stop, step) {
     return result;
 }
 
+// Format a given number
 function formatTime(time) {
     const d = 2;
     if (Math.abs(time) < 1e-9) {
@@ -43,6 +48,8 @@ function formatTime(time) {
     return time.toFixed(2) + " s";
 }
 
+// Takes a trace object as input and outputs a data normalized data array.
+// This array is ready to be merged and graphed
 function scale(trace, start, stop, step) {
     const result = [];
     const drawStart = trace.offset / step;
@@ -59,6 +66,8 @@ function scale(trace, start, stop, step) {
     return result;
 }
 
+// Given a reference value and a array with ascending sorted value
+// Find the closest value to reference
 function findClosestSorted(ref, arr) {
     let lastDiff = Math.abs(ref - arr[0]);
     let errDecrease = true;

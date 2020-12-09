@@ -1,3 +1,5 @@
+// Contains various general options
+// Alse contains actions to be taken when those are changed.
 class OptionContainer extends Collapsible {
     step = 1e-6;
     stack = false;
@@ -53,11 +55,13 @@ class OptionContainer extends Collapsible {
         this.contentDiv.append(wrapper);
     }
 
+    // Redraw all graphs on step change
     changeStep(event) {
         this.step = Number(event.target.value);
         activeGraphCtr.draw(traceCtr.traces);
     }
 
+    // Hide and show the appropriate graphs 
     changeStack(event) {
         this.stack = event.target.checked;
         if (this.stack) {
@@ -76,11 +80,13 @@ class OptionContainer extends Collapsible {
         }
     }
 
+    // Change main graph height
     changeMainHeight(event) {
         this.mainHeight = Number(event.target.value);
         mainGraphCtr.graph.setHeight(this.mainHeight);
     }
 
+    // Change stack graphs height
     changeStackHeight(event) {
         this.stackHeight = Number(event.target.value);
         stackGraphCtr.setHeight(this.stackHeight);

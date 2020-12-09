@@ -1,3 +1,4 @@
+// Conatains timings between annotations
 class TimingContainer extends Collapsible {
     timingDiv = document.createElement("div");
 
@@ -12,11 +13,13 @@ class TimingContainer extends Collapsible {
         this.contentDiv.appendChild(addTimingBtn);
     }
 
+    // Add new timing
     addTiming() {
         const timing = document.createElement("timing-elem");
         this.timingDiv.appendChild(timing);
     }
 
+    // Update drop-downs for all timings
     updateSelects(annotations) {
         for (let timing of this.timingDiv.children) {
             timing.updateSelect(annotations);
@@ -24,6 +27,7 @@ class TimingContainer extends Collapsible {
     }
 }
 
+// Timing element
 class Timing extends HTMLElement {
     firstSelect = document.createElement("select");
     secondSelect = document.createElement("select");
@@ -57,6 +61,7 @@ class Timing extends HTMLElement {
         shadow.appendChild(wrapper);
     }
 
+    // Delete all drop-downs and re-create them according to given values
     updateSelect(annotations) {
         let val1 = this.firstSelect.value;
         let val2 = this.secondSelect.value;
@@ -83,6 +88,7 @@ class Timing extends HTMLElement {
         this.updateResult();
     }
 
+    // If drop-down values are valid, update result box
     updateResult() {
         if (!this.firstSelect.value || !this.secondSelect.value) {
             this.result.value = "";

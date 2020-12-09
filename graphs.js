@@ -1,3 +1,4 @@
+// Contains the main graph and utility functions
 class MainGraphContainer extends HTMLElement {
     wrapper = document.createElement("div");
     graph = document.createElement("main-graph");
@@ -29,6 +30,7 @@ class MainGraphContainer extends HTMLElement {
     }
 }
 
+// Contains all stack graphs and utility functions
 class StackGraphContainer extends HTMLElement {
     wrapper = document.createElement("div");
 
@@ -41,6 +43,7 @@ class StackGraphContainer extends HTMLElement {
         shadow.appendChild(this.wrapper);
     }
 
+    // Update graphs for all given traces
     draw(traces) {
         const annotations = traceCtr.annotations;
         if (!Array.isArray(traces)) { traces = [traces]; }
@@ -53,6 +56,7 @@ class StackGraphContainer extends HTMLElement {
         }
     }
 
+    // Return graph coresponding to given name
     getGraph(name) {
         for (let graph of this.graphs) {
             if (graph.name == name) {
@@ -62,24 +66,27 @@ class StackGraphContainer extends HTMLElement {
         return null;
     }
 
+    // Hide graph if not visible
+    // Update graph when shown
     setVisibility(name, show) {
         const graph = this.getGraph(name);
         if (show) {
             graph.style.display = "block";
             graph.draw(traceCtr.getTrace(name), traceCtr.start, traceCtr.stop, options.step);
-            graph.dygraph.resize();
         }
         else {
             graph.style.display = "none";
         }
     }
 
+    // Delete graph corresponding to given name
     deleteGraph(name) {
         const graph = this.getGraph(name);
         graph.dygraph.destroy();
         graph.remove();
     }
 
+    // Add graph and assign name to it
     addGraph(name) {
         const graph = document.createElement("stack-graph");
         graph.name = name;
@@ -87,10 +94,12 @@ class StackGraphContainer extends HTMLElement {
         return graph;
     }
 
+    // Hide
     hide() {
         this.wrapper.style.display = "none";
     }
 
+    // Show and set visibility
     show() {
         this.wrapper.style.display = "flex";
         const traces = traceCtr.traces;
@@ -99,11 +108,13 @@ class StackGraphContainer extends HTMLElement {
         }
     }
 
+    // Swap graph name
     swapName(oldName, newName) {
         const graph = this.getGraph(oldName);
         graph.name = newName;
     }
 
+    // Change height of all graphs
     setHeight(height) {
         const graphs = this.graphs;
         for (let graph of graphs) {
@@ -111,10 +122,12 @@ class StackGraphContainer extends HTMLElement {
         }
     }
 
+    // Return array of stack graphs
     get graphs() {
         return this.wrapper.children;
     }
 
+    // Return flex order of the lowest graph
     get maxFlexOrder() {
         let max = 0;
         for (let graph of this.graphs) {
@@ -127,6 +140,7 @@ class StackGraphContainer extends HTMLElement {
     }
 }
 
+// Generic dygraph wrapper class
 class Graph extends HTMLElement {
     dygraph;
     graphDiv;
@@ -169,11 +183,13 @@ class Graph extends HTMLElement {
         );
     }
 
+    // Add annotation to with trace container
     onPointClick(event, point) {
         const annotations = traceCtr.addAnnotation(point);
         this.dygraph.setAnnotations(annotations);
     }
 
+    // Remove annotation with trace container
     onAnnotationClick(annotation, point, dygraph, event) {
         if (!event.ctrlKey) {
             return;
@@ -182,11 +198,13 @@ class Graph extends HTMLElement {
         this.dygraph.setAnnotations(annotations);
     }
 
+    // Change div height and resize dygraph
     setHeight(height) {
         this.graphDiv.style.height = String(height) + "px";
         this.dygraph.resize();
     }
 
+    // Normalize and draw given traces
     draw(traces, start, stop, step) {
         console.log("Drawing graph...")
         const dataArrays = [];
@@ -213,6 +231,7 @@ class Graph extends HTMLElement {
     }
 }
 
+// Single graph 
 class MainGraph extends Graph {
     constructor() {
         super();
@@ -223,6 +242,7 @@ class MainGraph extends Graph {
     }
 }
 
+// Stack graphs
 class StackGraph extends Graph {
     upBtn = document.createElement("button");
     downBtn = document.createElement("button");
@@ -254,6 +274,7 @@ class StackGraph extends Graph {
         btnDiv.appendChild(this.downBtn);
     }
 
+    // Toggle button visibility
     showBtns(event) {
         if (event.type == "mouseover") {
             this.upBtn.style.display = "inline";
@@ -265,6 +286,7 @@ class StackGraph extends Graph {
         }
     }
 
+    // Find closest above graph and swap order
     shiftUp(event) {
         let target = this;
         let maxDiff = -1000;
@@ -280,7 +302,8 @@ class StackGraph extends Graph {
         this.style.order = target.style.order;
         target.style.order = old;
     }
-
+    
+    // Find closest below graph and swap order
     shiftDown(event) {
         let target = this;
         let maxDiff = 1000;
@@ -297,10 +320,12 @@ class StackGraph extends Graph {
         target.style.order = old;
     }
 
+    // Return name from labels
     get name() {
         return this.dygraph.getLabels()[1];
     }
 
+    // Set name with labels
     set name(name) {
         this.dygraph.updateOptions({
             labels: ["Time", name]

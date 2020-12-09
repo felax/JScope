@@ -1,3 +1,4 @@
+// Contains UI elements and stores data related to traces
 class TraceContainer extends Collapsible {
     scopeDiv = document.createElement("div");
 
@@ -12,6 +13,8 @@ class TraceContainer extends Collapsible {
         this.contentDiv.appendChild(addScopeBtn);
     }
 
+    // Find trace and bind an annotation to it
+    // point: {x, y, xval, yval, name, idx, canvasx, canvasy}
     addAnnotation(point) {
         const trace = this.getTrace(point.name);
         const num = this.getUniqueAnnotationNum();
@@ -22,7 +25,10 @@ class TraceContainer extends Collapsible {
         return annotations;
     }
 
+    // Find trace of the annotation and remove it
+    // annotation: {series, x, shortText, text, xval, div}
     removeAnnotation(annotation) {
+        console.log(annotation)
         const trace = this.getTrace(annotation.series);
         trace.removeAnnotation(annotation);
         const annotations = this.annotations;
@@ -30,12 +36,14 @@ class TraceContainer extends Collapsible {
         annotationCtr.update(annotations);
         return annotations;
     }
-
+    
+    // Create and add a new scope
     addScope() {
         const scope = document.createElement("scope-elem");
         this.scopeDiv.appendChild(scope);
     }
 
+    // Return an array containing all traces
     get traces() {
         const traces = [];
         for (let scope of this.scopeDiv.children) {
@@ -46,6 +54,7 @@ class TraceContainer extends Collapsible {
         return traces;
     }
 
+    // Get trace with a given name
     getTrace(name) {
         const traces = this.traces;
         for (let trace of traces) {
@@ -56,6 +65,7 @@ class TraceContainer extends Collapsible {
         return null;
     }
 
+    // Return name array
     get names() {
         const traces = this.traces;
         let names = [];
@@ -65,6 +75,7 @@ class TraceContainer extends Collapsible {
         return names;
     }
 
+    // Add number after name if it is not unique
     getUniqueName(name) {
         const names = this.names;
         let newName = name;
@@ -77,6 +88,7 @@ class TraceContainer extends Collapsible {
         return newName;
     }
 
+    // Return all annotations for all traces in dygraph format
     get annotations() {
         const annotations = [];
         const traces = this.traces;
@@ -95,6 +107,7 @@ class TraceContainer extends Collapsible {
         return annotations;
     }
 
+    // Get the lowest number not used for annotations
     getUniqueAnnotationNum() {
         const annotations = this.annotations;
         const numbers = [];
@@ -106,6 +119,7 @@ class TraceContainer extends Collapsible {
         return i;
     }
 
+    // Get lowest x value for all traces
     get start() {
         const traces = this.traces;
         let start = 1000;
@@ -116,6 +130,7 @@ class TraceContainer extends Collapsible {
         return start;
     }
 
+    // Get highest x value for all traces
     get stop() {
         const traces = this.traces;
         let stop = 0;
@@ -127,6 +142,8 @@ class TraceContainer extends Collapsible {
     }
 }
 
+// Scope which conatains traces. 
+// The scope is used to apply an offset to multiple traces
 class Scope extends HTMLElement {
     traceDiv = document.createElement('div');
     offset = 0;
@@ -137,7 +154,7 @@ class Scope extends HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.style.borderStyle = "solid";
         wrapper.style.borderWidth = "thin";
-        wrapper.style.padding = "4px 0"
+        wrapper.style.padding = "4px 0";
 
         const uploadFileBtn = document.createElement("input");
         uploadFileBtn.type = "file";
@@ -162,6 +179,7 @@ class Scope extends HTMLElement {
         shadow.appendChild(wrapper);
     }
 
+    // Remove all traces then the scope. Update graph is relevant.
     delete() {
         while (this.traceDiv.children.length > 0) {
             const trace = this.traceDiv.children.item(0);
@@ -175,6 +193,7 @@ class Scope extends HTMLElement {
         }
     }
 
+    // Add the given trace to the scope and create an associated stack graph
     addTrace(trace) {
         trace.name = traces.getUniqueName(trace.name);
         trace.nameInput.value = trace.name;
@@ -184,6 +203,7 @@ class Scope extends HTMLElement {
         graph.style.order = String(stackGraphCtr.maxFlexOrder + 1);
     }
 
+    // Update offsets of all traces in the scope
     updateOffsets(event) {
         this.offset = Number(event.target.value);
         const traces = this.traceDiv.children;
@@ -193,6 +213,8 @@ class Scope extends HTMLElement {
         activeGraphCtr.draw(traceCtr.traces, options.step);
     }
 
+    // Get file from input button and parse it into an array
+    // Detect CSV format using that array and create a trace object
     loadCSV(event) {
         const file = event.target.files[0];
         const reader = new FileReader();
@@ -217,6 +239,7 @@ class Scope extends HTMLElement {
     }
 }
 
+// Trace element which represents a "Channel measure" taken with an oscilloscope
 class Trace extends HTMLElement {
     name;
     data = [0];
@@ -257,17 +280,17 @@ class Trace extends HTMLElement {
         shadow.appendChild(wrapper);
     }
 
+    // Delete trace and nul it's data
     delete() {
         this.data = null;
-        const graph = stackGraphCtr.getGraph(this.name);
-        graph.dygraph.destroy();
-        graph.remove();
+        stackGraphCtr.deleteGraph(this.name);
         this.remove();
         if (!options.stack) {
             mainGraphCtr.draw(traceCtr.traces, options.step);
         }
     }
 
+    // Add annotation not reliant on offset
     addAnnotation(number, point) {
         const data = {
             x: point.xval - this.offset,
@@ -277,6 +300,7 @@ class Trace extends HTMLElement {
         this.annotations.push(data);
     }
 
+    // Find and remove annotation
     removeAnnotation(annotation) {
         for (let i = 0; i < this.annotations.length; i++) {
             if (this.annotations[i].num == annotation.shortText) {
@@ -285,29 +309,24 @@ class Trace extends HTMLElement {
         }
     }
 
+    // Make sure the new name is unique and update stack graph name
     changeName(event) {
         const newName = traceCtr.getUniqueName(event.target.value);
-        if (options.stack) {
-            stackGraphCtr.swapName(this.name, newName);
-        }
+        stackGraphCtr.swapName(this.name, newName);
         this.name = newName;
+        this.nameInput.value = newName;
         activeGraphCtr.draw(this);
     }
 
+    // Update color with redraw
     setColor(event) {
         this.color = event.target.value;
         activeGraphCtr.draw(this);
     }
 
+    // Update visibility with redraw
     setVisibility(event) {
         this.visibility = event.target.checked;
-        if (this.visibility) {
-            console.log(true);
-            activeGraphCtr.setVisibility(this.name, true);
-        }
-        else {
-            console.log(false)
-            activeGraphCtr.setVisibility(this.name, false);
-        }
+        activeGraphCtr.setVisibility(this.name, this.visibility);
     }
 }
