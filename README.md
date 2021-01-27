@@ -1,3 +1,3 @@
 # JScope
 https://felax.github.io/JScope/
-![alt text](https://github.com/felax/JScope/blob/main/screenshot.png?raw=true)
+![alt text](https://raw.githubusercontent.com/felax/JScope/main/screenshot.PNG)
